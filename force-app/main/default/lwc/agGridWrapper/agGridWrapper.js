@@ -54,7 +54,7 @@ export default class AgGridWrapper extends LightningElement {
         };
 
         // Initialize AG Grid
-        window.agGrid.createGrid(gridDiv, gridOptions);
+        new agGrid.Grid(gridDiv, gridOptions);
         this.initialized = true;
     }
 
