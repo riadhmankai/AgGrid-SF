@@ -45,6 +45,7 @@ export default class AgGridWrapper extends LightningElement {
         const gridOptions = {
             columnDefs: this.columnDefs,
             rowData: this.rowData,
+            theme: 'legacy',
             onGridReady: (params) => {
                 this.gridApi = params.api;
                 this.gridColumnApi = params.columnApi;
