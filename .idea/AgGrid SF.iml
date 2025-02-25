@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="GENERAL_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="IlluminatedCloud" name="Illuminated Cloud">
+      <configuration>
+        <option name="connectionName" value="Perso7" />
+        <option name="connectionType" value="OAUTH" />
+        <option name="moduleContents">
+          <ModuleContents>
+            <option name="contentSelectionType" value="PACKAGE_XML" />
+            <option name="packageXmlRelativePath" value="manifest/package.xml" />
+          </ModuleContents>
+        </option>
+      </configuration>
+    </facet>
+  </component>
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/config" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/force-app" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/.tmp" />
+      <excludeFolder url="file://$MODULE_DIR$/temp" />
+      <excludeFolder url="file://$MODULE_DIR$/tmp" />
+    </content>
+    <orderEntry type="jdk" jdkName="IlluminatedCloud (AgGrid SF/Perso7)" jdkType="IlluminatedCloud" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="AgGrid SF/lwc_types" level="project" />
+  </component>
+</module>

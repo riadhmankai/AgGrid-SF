@@ -1,8 +1,9 @@
 {
-  "name": "salesforce-app",
-  "private": true,
+  "name": "aggrid-sf",
+  "private": false,
   "version": "1.0.0",
-  "description": "Salesforce App",
+  "description": "A Salesforce adaptation for the famous JavaScript library AG Grid Community",
+  "license": "MIT",
   "scripts": {
     "lint": "eslint **/{aura,lwc}/**/*.js",
     "test": "npm run test:unit",
