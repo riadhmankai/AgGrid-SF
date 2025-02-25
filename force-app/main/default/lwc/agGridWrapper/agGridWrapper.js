@@ -21,19 +21,22 @@ export default class AgGridWrapper extends LightningElement {
         { name: 'Bob Johnson', age: 35, country: 'UK' }
     ];
 
-    async connectedCallback() {
-        try {
-            // Load AG Grid library and styles
-            await Promise.all([
-                loadScript(this, agGridResource + '/ag-grid-community.min.noStyle.js'),
-                loadStyle(this, agGridResource + '/styles/ag-grid.css'),
-                loadStyle(this, agGridResource + '/styles/ag-theme-alpine.css')
-            ]);
-            
-            this.initializeGrid();
-        } catch (error) {
-            console.error('Error loading AG Grid resources', error);
+    renderedCallback() {
+        if (this.initialized) {
+            return;
         }
+
+        Promise.all([
+            loadStyle(this, agGridResource + '/styles/ag-grid.css'),
+            loadStyle(this, agGridResource + '/styles/ag-theme-alpine.css'),
+            loadScript(this, agGridResource + '/ag-grid-community.min.noStyle.js')
+        ])
+            .then(() => {
+                this.initializeGrid();
+            })
+            .catch(error => {
+                console.error('Error loading AG Grid resources:', error);
+            });
     }
 
     initializeGrid() {
@@ -42,20 +45,41 @@ export default class AgGridWrapper extends LightningElement {
         }
 
         const gridDiv = this.template.querySelector('.ag-grid-container');
+        if (!gridDiv) {
+            console.error('Grid container element not found');
+            return;
+        }
+
+        const agGrid = window.agGrid;
+        if (!agGrid) {
+            console.error('AG Grid library not loaded');
+            return;
+        }
+
         const gridOptions = {
             columnDefs: this.columnDefs,
             rowData: this.rowData,
-            theme: 'legacy',
+            defaultColDef: {
+                flex: 1,
+                minWidth: 100,
+                resizable: true,
+                sortable: true
+            },
             onGridReady: (params) => {
                 this.gridApi = params.api;
                 this.gridColumnApi = params.columnApi;
-                params.api.sizeColumnsToFit();
+                if (params.api) {
+                    params.api.sizeColumnsToFit();
+                }
             }
         };
 
-        // Initialize AG Grid
-        new agGrid.Grid(gridDiv, gridOptions);
-        this.initialized = true;
+        try {
+            agGrid.createGrid(gridDiv, gridOptions);
+            this.initialized = true;
+        } catch (error) {
+            console.error('Error creating grid:', error);
+        }
     }
 
     // Example method to update data
