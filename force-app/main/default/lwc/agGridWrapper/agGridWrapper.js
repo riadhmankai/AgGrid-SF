@@ -1,6 +1,4 @@
 import { LightningElement } from 'lwc';
-import { loadScript, loadStyle } from 'lightning/platformResourceLoader';
-import agGridResource from '@salesforce/resourceUrl/agGrid';
 
 export default class AgGridWrapper extends LightningElement {
     gridApi;
@@ -21,22 +19,45 @@ export default class AgGridWrapper extends LightningElement {
         { name: 'Bob Johnson', age: 35, country: 'UK' }
     ];
 
-    renderedCallback() {
+    async renderedCallback() {
         if (this.initialized) {
             return;
         }
 
-        Promise.all([
-            loadStyle(this, agGridResource + '/styles/ag-grid.css'),
-            loadStyle(this, agGridResource + '/styles/ag-theme-alpine.css'),
-            loadScript(this, agGridResource + '/ag-grid-community.min.noStyle.js')
-        ])
-            .then(() => {
-                this.initializeGrid();
-            })
-            .catch(error => {
-                console.error('Error loading AG Grid resources:', error);
-            });
+        try {
+            // Load AG Grid and theme from CDN in sequence
+            await this.loadStyle('https://cdn.jsdelivr.net/npm/ag-grid-community@33.1.1/styles/ag-grid.min.css');
+            await this.loadStyle('https://cdn.jsdelivr.net/npm/ag-grid-community@33.1.1/styles/ag-theme-quartz.min.css');
+            await this.loadScript('https://cdn.jsdelivr.net/npm/ag-grid-community@33.1.1/dist/ag-grid-community.min.js');
+            
+            // Initialize after loading
+            this.initializeGrid();
+        } catch (error) {
+            console.error('Error loading AG Grid:', error);
+        }
+    }
+
+    loadStyle(url) {
+        return new Promise((resolve, reject) => {
+            const link = document.createElement('link');
+            link.href = url;
+            link.type = 'text/css';
+            link.rel = 'stylesheet';
+            link.onload = resolve;
+            link.onerror = reject;
+            document.head.appendChild(link);
+        });
+    }
+
+    loadScript(url) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.type = 'text/javascript';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 
     initializeGrid() {
@@ -50,8 +71,7 @@ export default class AgGridWrapper extends LightningElement {
             return;
         }
 
-        const agGrid = window.agGrid;
-        if (!agGrid) {
+        if (!window.agGrid) {
             console.error('AG Grid library not loaded');
             return;
         }
@@ -75,7 +95,11 @@ export default class AgGridWrapper extends LightningElement {
         };
 
         try {
-            agGrid.createGrid(gridDiv, gridOptions);
+            // Use the createGrid method which is more Locker-friendly
+            window.agGrid.createGrid(gridDiv, {
+                ...gridOptions,
+                theme: 'quartz'
+            });
             this.initialized = true;
         } catch (error) {
             console.error('Error creating grid:', error);
