@@ -98,7 +98,7 @@ export default class AgGridWrapper extends LightningElement {
             // Use the createGrid method which is more Locker-friendly
             window.agGrid.createGrid(gridDiv, {
                 ...gridOptions,
-                theme: 'quartz'
+                theme: 'legacy'
             });
             this.initialized = true;
         } catch (error) {
