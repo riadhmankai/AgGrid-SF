@@ -10,6 +10,10 @@ AG Grid Community is a free, open-source data grid library that supports JavaScr
 force-app/
 ├── main/
     └── default/
+        ├── cspTrustedSites/  # CSP Trusted Sites configuration
+        │   ├── cdn_jsdelivr.cspTrustedSite-meta.xml
+        │   ├── fonts_gstatic.cspTrustedSite-meta.xml
+        │   └── google_fonts.cspTrustedSite-meta.xml
         └── lwc/
             └── agGridWrapper/  # LWC component implementing AG Grid
                 ├── agGridWrapper.html
@@ -73,9 +77,32 @@ You can customize the grid's appearance by modifying the CSS variables in the co
 
 ## Deploy to Salesforce
 
-Click the button below to deploy this project to your Salesforce org.
+You can deploy this project to your Salesforce org using one of these methods:
 
-[![Deploy to Salesforce](https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/deploy.png)](https://githubsfdeploy.herokuapp.com/app/githubdeploy/riadhmankai/AgGrid%20SF)
+### Option 1: Using SFDX CLI
+
+```bash
+# Clone the repository
+git clone https://github.com/riadhmankai/AgGrid-SF.git
+cd AgGrid-SF
+
+# Deploy to your default org
+sf project deploy start
+```
+
+### Option 2: Using Salesforce CLI directly with source
+
+```bash
+sf project deploy start -d force-app
+```
+
+### Option 3: Deploy using metadata format
+
+```bash
+sf deploy metadata -p force-app/main/default
+```
+
+> Note: The previous button that used githubsfdeploy.herokuapp.com is no longer reliable as the service may be down or deprecated.
 
 ## Contributing
 

@@ -5,7 +5,7 @@
       "default": true
     }
   ],
-  "name": "AgGrid SF",
+  "name": "AgGrid-SF",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
   "sourceApiVersion": "63.0"
