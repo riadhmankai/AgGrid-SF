@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
+        <members>cdn_jsdelivr</members>
+        <members>fonts_gstatic</members>
+        <members>google_fonts</members>
+        <name>CspTrustedSite</name>
+    </types>
+    <types>
         <members>agGridWrapper</members>
         <name>LightningComponentBundle</name>
     </types>

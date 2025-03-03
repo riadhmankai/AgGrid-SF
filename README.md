@@ -71,6 +71,12 @@ You can customize the grid's appearance by modifying the CSS variables in the co
 }
 ```
 
+## Deploy to Salesforce
+
+Click the button below to deploy this project to your Salesforce org.
+
+[![Deploy to Salesforce](https://raw.githubusercontent.com/afawcett/githubsfdeploy/master/deploy.png)](https://githubsfdeploy.herokuapp.com/app/githubdeploy/riadhmankai/AgGrid%20SF)
+
 ## Contributing
 
 Feel free to submit issues and enhancement requests!

@@ -51,3 +51,15 @@ target/
 /.illuminatedCloud/
 **/tsconfig*.json
 **/*.tsbuildinfo
+
+# Visual Studio Code workspace settings
+.vscode/
+
+# Build output directories
+dist/
+
+# Temporary files
+*.tmp
+
+# JetBrains IDE settings
+.idea/
