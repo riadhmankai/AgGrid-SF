@@ -14,6 +14,9 @@ deploy-options.json
 # LWC Jest coverage reports
 coverage/
 
+# SOQL Query Results
+**/scripts/soql/query-results
+
 # Logs
 logs
 *.log
@@ -35,6 +38,21 @@ Thumbs.db
 ehthumbs.db
 [Dd]esktop.ini
 $RECYCLE.BIN/
+
+# VS Code settings
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+*.iws
+*.ipr
+*.iws
+.idea_modules/
+out/
 
 # Local environment variables
 .env

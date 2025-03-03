@@ -1,5 +1,5 @@
 <component name="libraryTable">
-  <library name="AgGrid SF/lwc_types">
+  <library name="AgGrid-SF/lwc_types">
     <CLASSES>
       <root url="file://$PROJECT_DIR$/.illuminatedCloud/lwc/types" />
     </CLASSES>
