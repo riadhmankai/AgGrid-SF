@@ -1,7 +1,16 @@
 <template>
-  <div
-    class="ag-theme-quartz ag-grid-container"
-    lwc:dom="manual"
-    style="height: 500px"
-  ></div>
+  <div class="slds-card">
+    <div class="slds-card__header">
+      <h2 class="slds-card__header-title">Account Data</h2>
+    </div>
+    <div class="slds-card__body">
+      <template if:true={error}>
+        <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
+          <span class="slds-assistive-text">Error</span>
+          <h2>{error}</h2>
+        </div>
+      </template>
+      <div class="ag-theme-quartz ag-grid-container" style="height: 500px; width: 100%"></div>
+    </div>
+  </div>
 </template>

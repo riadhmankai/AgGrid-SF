@@ -25,5 +25,6 @@
     <orderEntry type="jdk" jdkName="IlluminatedCloud (AgGrid SF/Perso7)" jdkType="IlluminatedCloud" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="AgGrid SF/lwc_types" level="project" />
+    <orderEntry type="library" name="AgGrid-SF/lwc_types" level="project" />
   </component>
 </module>

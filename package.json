@@ -12,9 +12,11 @@
     "test:unit:debug": "sfdx-lwc-jest --debug",
     "test:unit:coverage": "sfdx-lwc-jest --coverage",
     "prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
-    "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
-    "postinstall": "husky install",
-    "precommit": "lint-staged"
+    "prettier:verify": "prettier --check \"force-app/**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+    "prettier:force-app": "prettier --write \"force-app/**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"" ,
+    "precommit": "lint-staged",
+    "prepare": "husky install",
+    "pmd": "pmd -d force-app -R rulesets/apex/quickstart.xml -f text"
   },
   "devDependencies": {
     "@lwc/eslint-plugin-lwc": "^2.0.0",
