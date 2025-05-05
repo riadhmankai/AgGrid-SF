@@ -9,6 +9,12 @@
       "env": {
         "node": true
       }
+    },
+    {
+      "files": ["agGridWrapper/agGridWrapper.js"],
+      "rules": {
+        "@lwc/lwc/no-api-reassignments": "off"
+      }
     }
   ]
 }

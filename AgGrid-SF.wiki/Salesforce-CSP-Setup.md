@@ -14,6 +14,7 @@ To successfully integrate the AG Grid with Salesforce Lightning Web Components (
 3. **Add Trusted Sites**: You need to add the following URLs as trusted sites to allow AG Grid resources to load properly:
 
    - `https://cdn.jsdelivr.net`
+   - `https://unpkg.com`
    - `https://fonts.googleapis.com`
    - `https://fonts.gstatic.com`
 

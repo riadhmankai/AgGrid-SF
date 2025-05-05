@@ -24,6 +24,7 @@ Before you begin the installation process, ensure you have the following:
    Add the following trusted sites to your Salesforce Content Security Policy (CSP) settings:
 
    - `https://cdn.jsdelivr.net`
+   - `https://unpkg.com`
    - `https://fonts.googleapis.com`
    - `https://fonts.gstatic.com`
 
