@@ -14,7 +14,8 @@
     "prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
     "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
     "precommit": "lint-staged",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "pmd": "pmd -d force-app/main/default/classes -R rulesets/apex/quickstart.xml -f text"
   },
   "devDependencies": {
     "@lwc/eslint-plugin-lwc": "^2.0.0",

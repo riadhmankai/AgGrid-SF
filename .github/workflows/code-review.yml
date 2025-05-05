@@ -1,0 +1,54 @@
+name: Code Review
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  prettier:
+    name: Prettier Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Or your project's Node.js version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Prettier Check
+        run: npm run prettier:verify
+
+  pmd:
+    name: PMD Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "11" # Or the version required by your PMD setup
+
+      - name: Download PMD
+        run: |
+          PMD_VERSION=6.55.0 # Use a recent PMD version
+          wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-bin-${PMD_VERSION}.zip
+          unzip pmd-bin-${PMD_VERSION}.zip
+          sudo mv pmd-bin-${PMD_VERSION} /opt/pmd
+          echo "/opt/pmd/bin" >> $GITHUB_PATH
+
+      - name: Run PMD Scan
+        run: |
+          pmd -d force-app/main/default/classes -R rulesets/apex/quickstart.xml -f text
+          # Add other PMD commands for Aura/LWC if needed, adjust rulesets and paths
+          # Example for LWC (requires specific PMD rules/setup):
+          # pmd -d force-app/main/default/lwc -R path/to/lwc/ruleset.xml -f text
