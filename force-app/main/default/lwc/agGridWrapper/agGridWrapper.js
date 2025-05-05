@@ -155,13 +155,11 @@ export default class AgGridWrapper extends LightningElement {
 
   onGridReady(params) {
     try {
-      console.log('Grid Ready params:', params);
       if (params && params.api) {
         this.gridApi = params.api;
         this.gridColumnApi = params.columnApi;
         
         if (this.gridApi && typeof this.gridApi.setRowData === 'function') {
-          console.log('GridApi available, setting data if available');
           this.gridApi.sizeColumnsToFit();
           
           // Set data if it was fetched before grid was ready
@@ -229,14 +227,12 @@ export default class AgGridWrapper extends LightningElement {
 
       // Use the older createGrid pattern which works better with Locker Service
       if (typeof window.agGrid.createGrid === 'function') {
-        console.log('Using createGrid API');
         const grid = window.agGrid.createGrid(gridDiv, gridOptions);
         
         // Ensure we have a valid gridApi reference
         if (grid && grid.api) {
           this.gridApi = grid.api;
           this.gridColumnApi = grid.columnApi;
-          console.log('Grid created successfully with createGrid');
         }
         
         this._initialized = true;
@@ -244,8 +240,6 @@ export default class AgGridWrapper extends LightningElement {
         // Fallback to the Grid constructor if createGrid is not available
         try {
           if (window.agGrid && window.agGrid.Grid) {
-            console.log('Using Grid constructor');
-            // Creating and attaching the grid
             const grid = this.createAndAttachGrid(window.agGrid.Grid, gridDiv, gridOptions);
             if (grid && grid.api) {
               this.gridApi = grid.api;

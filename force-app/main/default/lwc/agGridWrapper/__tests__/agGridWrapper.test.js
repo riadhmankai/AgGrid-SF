@@ -1,156 +1,164 @@
-import { createElement } from "lwc";
-import AgGridWrapper from "c/agGridWrapper";
-import { registerApexTestWireAdapter } from "@salesforce/sfdx-lwc-jest";
-import getGridData from "@salesforce/apex/AgGridDataController.getGridData";
+import { createElement } from 'lwc';
+import AgGridWrapper from 'c/agGridWrapper';
+import getGridData from '@salesforce/apex/AgGridDataController.getGridData';
 
-// Register the Apex wire adapter
-const getGridDataAdapter = registerApexTestWireAdapter(getGridData);
+// Mock the Apex wire adapter
+jest.mock(
+    '@salesforce/apex/AgGridDataController.getGridData',
+    () => {
+        const {
+            createApexTestWireAdapter
+        } = require('@salesforce/wire-service-jest-util');
+        return {
+            default: createApexTestWireAdapter(jest.fn())
+        };
+    },
+    { virtual: true }
+);
 
-// Create a mock for the AG Grid API
+// Mock the component's specific load methods BEFORE the describe block
+AgGridWrapper.prototype.loadScript = jest.fn(() => Promise.resolve());
+AgGridWrapper.prototype.loadStyle = jest.fn(() => Promise.resolve());
+
+// Mock the AG Grid library and its methods globally for Jest
+let gridOptionsPassedToCreateGrid;
 const mockGridApi = {
-  setRowData: jest.fn(),
-  sizeColumnsToFit: jest.fn()
+    setRowData: jest.fn(),
+    sizeColumnsToFit: jest.fn(),
+};
+const mockColumnApi = {};
+
+global.agGrid = {
+    createGrid: jest.fn((container, options) => {
+        gridOptionsPassedToCreateGrid = options;
+        // Simulate async grid ready callback using microtasks
+        Promise.resolve().then(() => {
+            if (gridOptionsPassedToCreateGrid && gridOptionsPassedToCreateGrid.onGridReady) {
+                gridOptionsPassedToCreateGrid.onGridReady({
+                    api: mockGridApi,
+                    columnApi: mockColumnApi,
+                });
+            }
+        });
+        return { api: mockGridApi, columnApi: mockColumnApi };
+    }),
+    Grid: jest.fn().mockImplementation(() => ({
+        api: mockGridApi,
+        columnApi: mockColumnApi
+    }))
 };
 
-// Mock AG Grid library loading
-global.window.agGrid = {
-  createGrid: jest.fn().mockImplementation((div, options) => {
-    // Simulate successful grid creation and call onGridReady if it exists
-    if (options && typeof options.onGridReady === "function") {
-      options.onGridReady({ api: mockGridApi, columnApi: {} });
+describe('c-ag-grid-wrapper', () => {
+    // Use Jest timers
+    jest.useFakeTimers();
+
+    afterEach(() => {
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+        jest.clearAllMocks();
+        gridOptionsPassedToCreateGrid = undefined;
+        // Reset timers after each test
+        jest.clearAllTimers();
+    });
+
+    // Helper function to wait for promises and timers
+    async function advanceTimersAndFlushPromises() {
+        // Run pending timers (like setTimeout, setInterval)
+        jest.runOnlyPendingTimers();
+        // Yield to allow microtasks (Promise resolutions) to process
+        // eslint-disable-next-line no-undef
+        await Promise.resolve();
+        // Run timers again in case promises scheduled more timers
+        jest.runOnlyPendingTimers();
+        // Yield again for safety
+        // eslint-disable-next-line no-undef
+        await Promise.resolve();
     }
-    return { api: mockGridApi };
-  })
-};
 
-// Create more sophisticated mocks for document methods
-const origAppendChild = document.head.appendChild;
-document.head.appendChild = jest.fn((element) => {
-  // For script and link elements, immediately fire their load event
-  if (element && (element.tagName === "SCRIPT" || element.tagName === "LINK")) {
-    // Using Promise.resolve().then() instead of setTimeout to avoid ESLint warning
-    Promise.resolve().then(() => {
-      if (typeof element.onload === "function") {
-        element.onload();
-      }
-    });
-  }
-  return origAppendChild.call(document.head, element);
-});
+    it('renders the grid container div', () => {
+        // Arrange
+        const element = createElement('c-ag-grid-wrapper', {
+            is: AgGridWrapper
+        });
 
-// Helper function to wait for async operations
-async function flushPromises() {
-  // Using Promise.resolve() instead of setTimeout to avoid ESLint warning
-  return Promise.resolve();
-}
+        // Act
+        document.body.appendChild(element);
 
-describe("c-ag-grid-wrapper", () => {
-  afterEach(() => {
-    // The jsdom instance is shared across test cases in a single file so reset the DOM
-    while (document.body.firstChild) {
-      document.body.removeChild(document.body.firstChild);
-    }
-    // Reset mocks
-    jest.clearAllMocks();
-  });
-
-  it("renders the grid container div", () => {
-    // Arrange
-    const element = createElement("c-ag-grid-wrapper", {
-      is: AgGridWrapper
+        // Assert
+        const div = element.shadowRoot.querySelector('.ag-grid-container');
+        expect(div).not.toBeNull();
+        expect(div.classList.contains('ag-theme-alpine')).toBe(true);
     });
 
-    // Act
-    document.body.appendChild(element);
+    it('loads AG Grid scripts and styles on render via component methods', async () => {
+        // Arrange
+        const element = createElement('c-ag-grid-wrapper', {
+            is: AgGridWrapper
+        });
 
-    // Assert
-    const div = element.shadowRoot.querySelector(".ag-grid-container");
-    expect(div).not.toBeNull();
-  });
+        // Act
+        document.body.appendChild(element);
 
-  it("loads AG Grid scripts and styles on render", async () => {
-    // Arrange
-    const element = createElement("c-ag-grid-wrapper", {
-      is: AgGridWrapper
+        // Wait for renderedCallback, mocked loadScript/loadStyle, and grid init
+        await advanceTimersAndFlushPromises();
+
+        // Assert
+        // Check that the component's methods were called
+        expect(AgGridWrapper.prototype.loadStyle).toHaveBeenCalledTimes(2); // Called for base and theme CSS
+        expect(AgGridWrapper.prototype.loadScript).toHaveBeenCalledTimes(1);
+
+        // Check that grid initialization was attempted after scripts loaded
+        expect(global.agGrid.createGrid).toHaveBeenCalled();
+        const gridContainer = element.shadowRoot.querySelector('.ag-grid-container');
+        expect(global.agGrid.createGrid).toHaveBeenCalledWith(gridContainer, expect.any(Object));
     });
 
-    // Act
-    document.body.appendChild(element);
+    it('displays error message if Apex call fails', async () => {
+        // Arrange
+        const element = createElement('c-ag-grid-wrapper', {
+            is: AgGridWrapper
+        });
+        document.body.appendChild(element);
 
-    // Need to wait for all promises in the component to resolve
-    await flushPromises(); // Wait for renderedCallback
-    await flushPromises(); // Wait for loadStyle/loadScript promises
-    await flushPromises(); // Wait for script/style load events to trigger
+        // Wait for initial render and script loading
+        await advanceTimersAndFlushPromises();
 
-    // Assert
-    expect(document.head.appendChild).toHaveBeenCalled();
-    expect(window.agGrid.createGrid).toHaveBeenCalled();
-  });
+        // Simulate error from Apex wire adapter
+        const errorPayload = { message: 'Apex Error', status: 500 };
+        getGridData.error(errorPayload);
 
-  it("displays error message if Apex call fails", async () => {
-    // Arrange
-    const APEX_ERROR = { body: { message: "An error occurred" } };
+        // Wait for component update
+        await advanceTimersAndFlushPromises();
 
-    const consoleErrorSpy = jest.spyOn(console, "error");
-
-    const element = createElement("c-ag-grid-wrapper", {
-      is: AgGridWrapper
+        // Assert
+        const errorDiv = element.shadowRoot.querySelector('.slds-notify_alert');
+        expect(errorDiv).not.toBeNull();
+        const errorMsg = element.shadowRoot.querySelector('h2');
+        expect(errorMsg).not.toBeNull(); // Check if the h2 tag exists
+        // Check if the *body* of the error property matches the payload
+        expect(element.error.body).toEqual(errorPayload);
     });
 
-    // Act
-    document.body.appendChild(element);
+    it('sets row data when Apex returns data', async () => {
+        // Arrange
+        const mockData = [{ Id: '1', Name: 'Test Account' }];
+        let element = createElement('c-ag-grid-wrapper', {
+            is: AgGridWrapper
+        });
+        document.body.appendChild(element);
 
-    // Emit the error from the mock wire adapter
-    getGridDataAdapter.error(APEX_ERROR);
-    await flushPromises(); // Wait for wire handler to process
+        // Wait for initial render, script loading, and grid initialization (onGridReady)
+        await advanceTimersAndFlushPromises();
 
-    // Assert
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    expect(element.error).not.toBeUndefined();
+        // Simulate data from Apex wire adapter AFTER grid is ready
+        getGridData.emit(mockData);
 
-    // Clean up
-    consoleErrorSpy.mockRestore();
-  });
+        // Wait for component update triggered by wire adapter
+        await advanceTimersAndFlushPromises();
 
-  it("sets row data when Apex returns data", async () => {
-    // Arrange
-    const MOCK_DATA = [
-      {
-        Id: "001xx000003DGgPAAW",
-        Name: "Test Account 1",
-        AccountNumber: "ACC123",
-        Owner: { Name: "Test Owner" },
-        AnnualRevenue: 1000000,
-        BillingStreet: "123 Main St",
-        BillingCity: "Testville",
-        BillingState: "TS",
-        BillingPostalCode: "12345",
-        BillingCountry: "Testland",
-        Phone: "123-456-7890"
-      }
-    ];
-
-    const element = createElement("c-ag-grid-wrapper", {
-      is: AgGridWrapper
+        // Assert
+        expect(mockGridApi.setRowData).toHaveBeenCalledWith(mockData);
+        expect(mockGridApi.sizeColumnsToFit).toHaveBeenCalled();
     });
-
-    // Act
-    document.body.appendChild(element);
-
-    // Simulate loading and initialization of the grid
-    await flushPromises();
-    await flushPromises();
-    await flushPromises();
-
-    // Clear previous calls to mockGridApi to isolate our test
-    mockGridApi.setRowData.mockClear();
-
-    // Emit data from the mock wire adapter after initialization
-    getGridDataAdapter.emit(MOCK_DATA);
-    await flushPromises(); // Wait for wire handler to process
-
-    // Assert
-    // Check that the mock API's setRowData was called with the mock data
-    expect(mockGridApi.setRowData).toHaveBeenCalledWith(MOCK_DATA);
-  });
 });
