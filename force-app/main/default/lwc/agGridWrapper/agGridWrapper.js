@@ -8,57 +8,24 @@ export default class AgGridWrapper extends LightningElement {
   _error;
   rowData;
 
-  // Lifecycle hook - handle initialization event
-  connectedCallback() {
-    this.addEventListener(
-      "privateinitializedchange",
-      this.handleInitializedChange
-    );
-  }
-
-  disconnectedCallback() {
-    this.removeEventListener(
-      "privateinitializedchange",
-      this.handleInitializedChange
-    );
-  }
-
-  // Event handler to update internal property
-  handleInitializedChange = (event) => {
-    this._initialized = event.detail.value;
-  };
-
   // Getters and setters for the error property to comply with ESLint
-  @api
+  @api 
   get error() {
     return this._error;
   }
-
+  
   set error(value) {
     this._error = value;
   }
-
+  
   // Getters and setters for the initialized property to comply with ESLint
   @api
   get initialized() {
     return this._initialized;
   }
-
+  
   set initialized(value) {
-    // This setter still exists for external API compatibility
     this._initialized = value;
-  }
-
-  // Private method to update initialization state via event
-  // This avoids ESLint warnings about @api property reassignments
-  notifyInitialized() {
-    // Using a custom event to update the internal state
-    this.dispatchEvent(
-      new CustomEvent("privateinitializedchange", {
-        bubbles: false,
-        detail: { value: true }
-      })
-    );
   }
 
   // Column definitions matching the Apex controller
@@ -70,7 +37,7 @@ export default class AgGridWrapper extends LightningElement {
       headerName: "Annual Revenue",
       field: "AnnualRevenue",
       type: "numericColumn",
-      valueFormatter: (params) => {
+      valueFormatter: function(params) {
         return params.value != null ? "$" + params.value.toLocaleString() : "";
       }
     },
@@ -82,11 +49,18 @@ export default class AgGridWrapper extends LightningElement {
   ];
 
   @wire(getGridData)
-  wiredData({ error, data }) {
+  wiredData(result) {
+    const { data, error } = result;
     if (data) {
       this.rowData = data;
-      if (this.gridApi && typeof this.gridApi.setRowData === "function") {
-        this.gridApi.setRowData(data);
+      // Only set row data if grid is initialized and API is available
+      if (this.gridApi && this.gridApi.setRowData) {
+        try {
+          this.gridApi.setRowData(data);
+        } catch (e) {
+          console.error("Error setting row data:", e);
+          this._error = "Error setting row data: " + e.message;
+        }
       }
       this._error = undefined;
     } else if (error) {
@@ -102,12 +76,16 @@ export default class AgGridWrapper extends LightningElement {
     }
 
     try {
-      // Load only Alpine theme CSS which works well with Salesforce
-      // This is the CSS-based theme, not the API-based theme
+      // First load the base CSS required by AG Grid
+      await this.loadStyle(
+        "https://unpkg.com/ag-grid-community@33.2.4/styles/ag-grid.min.css"
+      );
+      
+      // Then load the theme CSS
       await this.loadStyle(
         "https://unpkg.com/ag-grid-community@33.2.4/styles/ag-theme-alpine.min.css"
       );
-
+      
       // Then load script separately to ensure proper sequencing
       await this.loadScript(
         "https://unpkg.com/ag-grid-community@33.2.4/dist/ag-grid-community.min.js"
@@ -117,52 +95,92 @@ export default class AgGridWrapper extends LightningElement {
       this.initializeGrid();
     } catch (error) {
       console.error("Error loading AG Grid resources:", error);
-      this._error =
-        "Failed to load AG Grid resources: " +
-        (error.message || JSON.stringify(error));
+      this._error = "Failed to load AG Grid resources: " + (error.message || JSON.stringify(error));
     }
   }
 
   loadStyle(url) {
-    return new Promise((resolve, reject) => {
+    return new Promise(function(resolve, reject) {
+      // Check if the stylesheet is already loaded
+      const existingLink = document.querySelector(`link[href="${url}"]`);
+      if (existingLink) {
+        resolve(); // Already loaded
+        return;
+      }
+      
       const link = document.createElement("link");
       link.href = url;
       link.type = "text/css";
       link.rel = "stylesheet";
-      link.onload = () => resolve();
-      link.onerror = (error) =>
-        reject(new Error(`Failed to load style: ${url}, Error: ${error}`));
-
-      // Add to document.head instead of template for better compatibility
+      link.crossOrigin = "anonymous"; // Add cross-origin attribute
+      
+      link.onload = function() { 
+        resolve(); 
+      };
+      
+      link.onerror = function(error) {
+        console.error("Failed to load style:", url, error);
+        reject(new Error("Failed to load style: " + url));
+      };
+      
       document.head.appendChild(link);
     });
   }
 
   loadScript(url) {
-    return new Promise((resolve, reject) => {
+    return new Promise(function(resolve, reject) {
+      // Check if the script is already loaded
+      if (window.agGrid) {
+        resolve(); // AG Grid is already available
+        return;
+      }
+      
       const script = document.createElement("script");
       script.src = url;
       script.type = "text/javascript";
-      script.onload = () => resolve();
-      script.onerror = (error) =>
-        reject(new Error(`Failed to load script: ${url}, Error: ${error}`));
-
-      // Add to document.head instead of template for better compatibility
+      script.crossOrigin = "anonymous"; // Add cross-origin attribute
+      
+      script.onload = function() { 
+        resolve(); 
+      };
+      
+      script.onerror = function(error) {
+        console.error("Failed to load script:", url, error);
+        reject(new Error("Failed to load script: " + url));
+      };
+      
       document.head.appendChild(script);
     });
   }
 
   onGridReady(params) {
-    this.gridApi = params.api;
-    this.gridColumnApi = params.columnApi;
-
-    if (this.gridApi) {
-      this.gridApi.sizeColumnsToFit();
-
-      // Set data if it was fetched before grid was ready
-      if (this.rowData) {
-        this.gridApi.setRowData(this.rowData);
+    try {
+      console.log('Grid Ready params:', params);
+      if (params && params.api) {
+        this.gridApi = params.api;
+        this.gridColumnApi = params.columnApi;
+        
+        if (this.gridApi && typeof this.gridApi.setRowData === 'function') {
+          console.log('GridApi available, setting data if available');
+          this.gridApi.sizeColumnsToFit();
+          
+          // Set data if it was fetched before grid was ready
+          if (this.rowData) {
+            try {
+              this.gridApi.setRowData(this.rowData);
+            } catch (e) {
+              console.error("Error setting row data in onGridReady:", e);
+            }
+          }
+        } else {
+          console.warn('Grid API methods not available');
+        }
+      } else {
+        console.warn('Invalid grid ready params:', params);
       }
+    } catch(e) {
+      console.error("Error in onGridReady:", e);
+      this._error = "Error initializing grid: " + e.message;
     }
   }
 
@@ -184,7 +202,10 @@ export default class AgGridWrapper extends LightningElement {
     }
 
     try {
-      // Build grid options
+      // Define a handler for onGridReady that binds to this context
+      const onGridReadyHandler = this.onGridReady.bind(this);
+
+      // Build grid options with additional browser compatibility settings
       const gridOptions = {
         columnDefs: this.columnDefs,
         rowData: this.rowData || [],
@@ -195,55 +216,68 @@ export default class AgGridWrapper extends LightningElement {
           sortable: true,
           filter: true
         },
-        onGridReady: (params) => this.onGridReady(params),
+        onGridReady: onGridReadyHandler,
         suppressMenuHide: true,
         enableCellTextSelection: true,
-        // Explicitly set theme to "legacy" to avoid theme warning
-        theme: "legacy"
+        // Set theme back to "legacy" as required by AG Grid
+        theme: "legacy",
+        // Improve Firefox/Safari compatibility
+        suppressBrowserResizeObserver: true,
+        // Prevent cookie issues by disabling localStorage/cookies for grid state
+        suppressPersistence: true
       };
-      // eslint-disable-next-line @lwc/lwc/no-api-reassignments
 
       // Use the older createGrid pattern which works better with Locker Service
-      if (typeof window.agGrid.createGrid === "function") {
-        window.agGrid.createGrid(gridDiv, gridOptions);
-        this.initialized = true;
+      if (typeof window.agGrid.createGrid === 'function') {
+        console.log('Using createGrid API');
+        const grid = window.agGrid.createGrid(gridDiv, gridOptions);
+        
+        // Ensure we have a valid gridApi reference
+        if (grid && grid.api) {
+          this.gridApi = grid.api;
+          this.gridColumnApi = grid.columnApi;
+          console.log('Grid created successfully with createGrid');
+        }
+        
+        this._initialized = true;
       } else {
         // Fallback to the Grid constructor if createGrid is not available
         try {
-          // eslint-disable-next-line @lwc/lwc/no-api-reassignments
-          // Check if we can access the Grid constructor
           if (window.agGrid && window.agGrid.Grid) {
+            console.log('Using Grid constructor');
             // Creating and attaching the grid
-            this.createAndAttachGrid(window.agGrid.Grid, gridDiv, gridOptions);
-            this.initialized = true;
+            const grid = this.createAndAttachGrid(window.agGrid.Grid, gridDiv, gridOptions);
+            if (grid && grid.api) {
+              this.gridApi = grid.api;
+              this.gridColumnApi = grid.columnApi;
+            }
+            this._initialized = true;
           } else {
             throw new Error("AG Grid constructor not available");
           }
         } catch (innerError) {
           console.error("Error with Grid constructor:", innerError);
-          // Last resort - try direct instantiation via string access
-          // eslint-disable-next-line @lwc/lwc/no-api-reassignments
           const gridConstructor = window.agGrid.Grid;
           if (gridConstructor) {
-            // Creating and attaching the grid
-            this.createAndAttachGrid(gridConstructor, gridDiv, gridOptions);
-            this.initialized = true;
+            const grid = this.createAndAttachGrid(gridConstructor, gridDiv, gridOptions);
+            if (grid && grid.api) {
+              this.gridApi = grid.api;
+              this.gridColumnApi = grid.columnApi;
+            }
+            this._initialized = true;
           } else {
-            throw new Error(
-              "Could not access AG Grid constructor via any method"
-            );
+            throw new Error("Could not access AG Grid constructor via any method");
           }
         }
       }
     } catch (error) {
       console.error("Error creating grid:", error);
-      this._error =
-        "Failed to create AG Grid: " + (error.message || JSON.stringify(error));
+      this._error = "Failed to create AG Grid: " + (error.message || JSON.stringify(error));
     }
   }
-
-  // Helper method to create and attach grid - avoids 'new' for side effects
+  
   createAndAttachGrid(Constructor, container, options) {
-    return new Constructor(container, options);
+    const grid = new Constructor(container, options);
+    return grid;
   }
 }
