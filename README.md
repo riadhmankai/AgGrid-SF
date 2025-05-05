@@ -12,8 +12,11 @@ force-app/
     └── default/
         ├── cspTrustedSites/  # CSP Trusted Sites configuration
         │   ├── cdn_jsdelivr.cspTrustedSite-meta.xml
+        │   ├── cdn_unpkg.cspTrustedSite-meta.xml
         │   ├── fonts_gstatic.cspTrustedSite-meta.xml
         │   └── google_fonts.cspTrustedSite-meta.xml
+        ├── classes/  # Apex classes
+        │   └── ExampleApexClass.cls
         └── lwc/
             └── agGridWrapper/  # LWC component implementing AG Grid
                 ├── agGridWrapper.html
@@ -32,26 +35,29 @@ force-app/
 1. Add the following trusted sites to your Salesforce Content Security Policy (CSP settings):
 
    - `https://cdn.jsdelivr.net`
+   - `https://unpkg.com`
    - `https://fonts.googleapis.com`
    - `https://fonts.gstatic.com`
 
-2. Deploy the Lightning Web Component to your org:
+2. After cloning the repo, deploy both the Lightning Web Component and the Apex class to your org:
 
    ```bash
-   sf deploy metadata -p force-app/main/default/lwc/agGridWrapper
+   sf project deploy start -d force-app/main/default
    ```
 
-3. Add the `agGridWrapper` component to your Lightning page, app or home page.
+   > **Note**: Deploying the Apex class is essential for the `agGridWrapper` component to fetch data properly.
+
+3. Add the `agGridWrapper` component to your Lightning page, app, or home page.
 
 ## Implementation Details
 
 ### CDN Resources
 
-The project uses AG Grid Community Edition v33.1.1 loaded from CDN:
+The project uses AG Grid Community Edition v33.2.4 loaded from CDN:
 
-- Main JS: `https://cdn.jsdelivr.net/npm/ag-grid-community@33.1.1/dist/ag-grid-community.min.js`
-- Base CSS: `https://cdn.jsdelivr.net/npm/ag-grid-community@33.1.1/styles/ag-grid.min.css`
-- Theme CSS: `https://cdn.jsdelivr.net/npm/ag-grid-community@33.1.1/styles/ag-theme-quartz.min.css`
+- Main JS: `https://cdn.jsdelivr.net/npm/ag-grid-community@33.2.4/dist/ag-grid-community.min.js`
+- Base CSS: `https://cdn.jsdelivr.net/npm/ag-grid-community@33.2.4/styles/ag-grid.min.css`
+- Theme CSS: `https://cdn.jsdelivr.net/npm/ag-grid-community@33.2.4/styles/ag-theme-quartz.min.css`
 
 ### Key Features
 
@@ -75,34 +81,14 @@ You can customize the grid's appearance by modifying the CSS variables in the co
 }
 ```
 
-## Deploy to Salesforce
+## Documentation
 
-You can deploy this project to your Salesforce org using one of these methods:
+For detailed documentation, please refer to the [Project Wiki](AgGrid-SF.wiki/).
 
-### Option 1: Using SFDX CLI
+Key pages include:
+*   [Usage Guide](AgGrid-SF.wiki/Usage-Guide.md)
 
-```bash
-# Clone the repository
-git clone https://github.com/riadhmankai/AgGrid-SF.git
-cd AgGrid-SF
-
-# Deploy to your default org
-sf project deploy start
-```
-
-### Option 2: Using Salesforce CLI directly with source
-
-```bash
-sf project deploy start -d force-app
-```
-
-### Option 3: Deploy using metadata format
-
-```bash
-sf deploy metadata -p force-app/main/default
-```
-
-> Note: The previous button that used githubsfdeploy.herokuapp.com is no longer reliable as the service may be down or deprecated.
+<!-- Add links to other relevant wiki pages here -->
 
 ## Contributing
 

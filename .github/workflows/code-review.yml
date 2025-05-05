@@ -23,7 +23,7 @@ jobs:
         run: npm install
 
       - name: Run Prettier Check
-        run: npm run prettier:verify
+        run: npm run prettier:verify -- force-app/**
 
   pmd:
     name: PMD Scan
@@ -48,7 +48,5 @@ jobs:
 
       - name: Run PMD Scan
         run: |
-          pmd -d force-app/main/default/classes -R rulesets/apex/quickstart.xml -f text
-          # Add other PMD commands for Aura/LWC if needed, adjust rulesets and paths
-          # Example for LWC (requires specific PMD rules/setup):
-          # pmd -d force-app/main/default/lwc -R path/to/lwc/ruleset.xml -f text
+          pmd -d force-app -R rulesets/apex/quickstart.xml -f text
+          # Adjust rulesets and paths as needed for specific checks within force-app
