@@ -1,60 +1,84 @@
-# Troubleshooting Guide for AgGrid-SF
+# Troubleshooting and FAQ for AgGrid-SF
 
-This document provides solutions to common issues and errors that users may encounter while using the AgGrid-SF project. If you experience any problems, please refer to the following troubleshooting steps.
+This document provides solutions to common issues, answers frequently asked questions, and discusses compatibility with Salesforce Lightning Locker Service.
 
-## Common Issues
+## Lightning Locker Compatibility
 
-### 1. AG Grid Not Loading
+### Overview
 
-**Symptoms:** The AG Grid component does not render on the page.
+The AgGrid-SF project aims for compatibility with Salesforce's Lightning Locker Service. Locker enhances security by isolating components and enforcing stricter JavaScript rules.
 
-**Solution:**
+### Key Considerations & Best Practices
 
-- Ensure that you have added the necessary CDN links in your Salesforce Content Security Policy (CSP) settings. Refer to the [Salesforce-CSP-Setup.md](Salesforce-CSP-Setup.md) for detailed instructions.
-- Check the browser console for any errors related to resource loading.
+1.  **Locker Restrictions**: Locker Service restricts or modifies certain JavaScript behaviors (e.g., global scope access, some DOM manipulation methods). Code must adhere to these restrictions.
+2.  **Resource Loading**: Loading external libraries requires careful handling.
+    - **CDN**: Requires correctly configured CSP Trusted Sites. Can sometimes lead to intermittent issues due to timing or browser-specific CSP enforcement.
+    - **Static Resources**: Generally more reliable within Locker Service as resources are served from the Salesforce domain (`self`). Use `lightning/platformResourceLoader`.
+3.  **Component Isolation**: LWCs operate in isolated namespaces. Don't rely on global variables between components.
+4.  **Event Handling**: Use standard LWC event handling (`CustomEvent`).
+5.  **Testing**: Always test thoroughly in a Salesforce org (Sandbox or Scratch Org) where Locker Service is active.
+6.  **Avoid `eval()`/`new Function()`**: AG Grid itself _should_ avoid these, but be mindful if adding custom cell renderers or formatters.
+7.  **DOM Access**: Limit direct DOM manipulation. Prefer LWC template directives and refs where possible. AG Grid manages its own internal DOM, which is generally okay, but interactions _between_ LWC and AG Grid's DOM need care.
+
+## Common Issues & Solutions
+
+### 1. AG Grid Not Loading / Rendering
+
+- **Symptoms:** Component area is blank, no grid appears.
+- **Solutions:**
+  - **CSP Issues:** Verify CSP Trusted Sites (`unpkg.com`, `fonts.googleapis.com`, `fonts.gstatic.com`) are correctly configured and active in Salesforce Setup. Check the browser console for CSP errors (often mentioning `script-src`, `style-src`, or `font-src`).
+  - **Network Issues:** Ensure the browser can reach `unpkg.com`. Check the Network tab in browser developer tools for failed requests (404s, CORS errors).
+  - **JavaScript Errors:** Check the browser console for errors during resource loading (`loadScript`, `loadStyle`) or grid initialization (`initializeGrid`, `onGridReady`).
+  - **Locker Service:** Intermittent failures, especially in Firefox/Safari, might be Locker conflicts. Consider switching to Static Resources.
 
 ### 2. Data Not Displaying in the Grid
 
-**Symptoms:** The grid is empty or does not show the expected data.
+- **Symptoms:** Grid renders but shows "No Rows To Show" or is empty.
+- **Solutions:**
+  - **Apex Controller:** Verify the `AgGridDataController.getGridData` method is deployed, has no errors, and is returning data. Use `System.debug` or check Apex logs. Ensure the user has permission to execute the Apex class.
+  - **Wire Service:** Check the browser console for errors related to the `@wire` adapter. Ensure the data format returned by Apex matches the `field` names in `columnDefs`.
+  - **Grid API:** Check for errors in `onGridReady` or when `setRowData` is called. Is `this.gridApi` valid?
 
-**Solution:**
+### 3. Styling Issues (Theme Not Applied)
 
-- Verify that the data source is correctly defined in your JavaScript file. Ensure that the data is being fetched and passed to the grid correctly.
-- Check for any JavaScript errors in the console that may indicate issues with data processing.
+- **Symptoms:** Grid appears unstyled or uses a default browser look.
+- **Solutions:**
+  - **CSS Loading:** Check the Network tab and console for errors loading `ag-grid.min.css` or `ag-theme-alpine.min.css`. Verify CSP allows `style-src` from `unpkg.com`.
+  - **Theme Class:** Ensure the container div in `agGridWrapper.html` has the correct theme class (e.g., `class="ag-theme-alpine ..."`).
+  - **CSS Conflicts:** Check if other CSS on the page is interfering with AG Grid styles.
 
-### 3. Styling Issues with the Quartz Theme
+### 4. `this.gridApi.setRowData is not a function` Error
 
-**Symptoms:** The grid does not appear with the expected Quartz theme styling.
-
-**Solution:**
-
-- Ensure that the theme CSS file is correctly linked in your component. Check the CDN link for any typos or issues.
-- If you have customized the CSS variables, make sure they are defined correctly and do not conflict with the default styles.
-
-### 4. Compatibility Issues with Lightning Locker Service
-
-**Symptoms:** Certain features of AG Grid are not functioning as expected.
-
-**Solution:**
-
-- Review the [Lightning-Locker-Compatibility.md](Lightning-Locker-Compatibility.md) document for any known limitations or considerations when using AG Grid with Lightning Locker Service.
-- Ensure that your component adheres to the best practices for compatibility with Lightning Locker.
+- **Symptoms:** Error appears in the console, often when data arrives from Apex.
+- **Solution:** This usually means `this.gridApi` wasn't correctly assigned during grid initialization. Ensure `onGridReady` correctly receives the `params` object and assigns `this.gridApi = params.api`. Add console logs in `onGridReady` and `initializeGrid` to trace the `gridApi` object.
 
 ### 5. Deployment Errors
 
-**Symptoms:** Errors occur during the deployment of the AgGrid-SF component.
+- **Symptoms:** `sf project deploy start` fails.
+- **Solution:** Check the command output for specific errors (e.g., missing metadata files, invalid XML, Apex compile errors). Ensure all necessary files (`.cls`, `.cls-meta.xml`, `.lwc`, `.cspTrustedSite-meta.xml`) are included and correctly formatted.
 
-**Solution:**
+## FAQ
 
-- Check the deployment logs for specific error messages. Common issues may include missing metadata or incorrect paths.
-- Ensure that you are using the correct deployment commands as outlined in the [Installation.md](Installation.md) document.
+### What is AgGrid-SF?
 
-## Additional Resources
+An LWC wrapper for the AG Grid library, demonstrating integration within Salesforce, aiming for Locker Service compatibility.
 
-If you continue to experience issues after following the troubleshooting steps, consider reaching out for help:
+### Why use AG Grid in Salesforce?
 
-- Check the [FAQ.md](FAQ.md) for answers to common questions.
-- Visit the [Contributing.md](Contributing.md) file to report issues or request enhancements.
-- Engage with the community for support and advice.
+Provides advanced data grid features beyond standard Salesforce components (e.g., complex filtering/sorting, cell editing, grouping, pivoting).
 
-By following this troubleshooting guide, you should be able to resolve most common issues encountered while using the AgGrid-SF project.
+### How is it installed?
+
+Clone the repo, configure CSP, deploy metadata using Salesforce CLI. See [Setup](Setup.md).
+
+### Can I customize the grid appearance?
+
+Yes, via AG Grid theme parameters (CSS variables). See [Customization](Customization.md).
+
+### Is it compatible with Lightning Locker Service?
+
+It aims to be, but loading external libraries via CDN can sometimes cause issues. Using Static Resources is often more robust. See [Lightning Locker Compatibility](#lightning-locker-compatibility) above.
+
+### How do I report bugs or contribute?
+
+See [Contributing](Contributing.md). Use GitHub Issues.
